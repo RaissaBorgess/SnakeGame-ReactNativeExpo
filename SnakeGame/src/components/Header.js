@@ -30,7 +30,7 @@ const Header = ({top, score, paused, pause, reload}) => {
         )
 }
 
-const style = StyleSheet.create({
+const styles = StyleSheet.create({
     header: {
         flexDirection: "row",
         alignItems: "center",

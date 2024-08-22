@@ -27,13 +27,13 @@ const Game = () => {
     const [direction, setDirection] = useState(Direction.Right);
     const [snake, setSnake] = useState(SNAKE_START);
     const [food, setFood] = useState(false);
-    const [isGameOver, set IsGameOver] = useState(false);
+    const [isGameOver, setIsGameOver] = useState(false);
     const [isGamePaused, setIsGamePaused] = useState(false);
     const [score, setScore] = useState(0);
 
 const insets = useSafeAreaInsets();
 const ROWS = Math.floor (
-    (height - insets?.top = insets?.bottom = HEADER_HEIGHT) / PIXEL
+    (height - insets?.top - insets?.bottom - HEADER_HEIGHT) / PIXEL
 );
 const limits = {
     minX: 0,
@@ -42,11 +42,125 @@ const limits = {
     maxY: ROWS - 1,
 };
 
-function resetGame() f
-setsnake( SNAKE_START);
-setDirection(Direction.Right);
+
+function resetGame() {
+    setsnake( SNAKE_START);
+    setDirection(Direction.Right);
 }
 
  
+useEffect(() => {
+    if (!isGameOver) {
+        const speedInterval = setInterval(() => {
+            !isGamePaused && moveSnake();
+        }, SPEED);
+        return () => clearInterval(speedInterval);
+    } else {
+        resetGame();
+    }
+}, [snake, isGameOver, isGamePaused]);
+
+function handleGesture(event) {
+    const { translationX, translationY } = event.nativeEvent;
+
+    if (Math.abs(translationX) > Math.abs(translationY)) {
+        if (translationX > 0) {
+            setDirection(Direction.Right)
+        } else {
+            setDirection(Direction.Left)
+        }
+    } else {
+        if (translationY > 0) {
+            setDirection(Direction.Down)
+        } else {
+            setDirection(Direction.Up)
+        }
+    }
 }
-)}
+
+function moveSnake() {
+    const head ={ ...snake[0] };
+
+    switch (direction) {
+        case Direction.Right:
+            head.x += 1;
+            break;
+            case Direction.Left:
+            head.x -= 1;
+            break;
+            case Dimensions.Down:
+            head.y += 1;
+            break;
+            case Direction.Up:
+            head.y -= 1;
+            break;
+            default:
+            break;
+    }
+    if (testGameOver(head)) {
+        setIsGameOver(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        return;
+    }
+    if (testGameOver(head, food)) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setFood(newFoodPosition(limits));
+        setSnake([Head, ...snake]);
+        setScore((prevScore) => prevScore + INCREMENT);
+    } else {
+        setSnake([head, ...snake.slice(0, -1)]);
+    }
+ }
+
+    function testGameOver (snakeHead) {
+        return (
+            snakeHead.x < limits.minX ||
+            snakeHead.x < limits.maxX ||
+            snakeHead.y < limits.minY ||
+            snakeHead.y < limits.maxY 
+        );
+    }
+
+    function testEatsFood(snakeHead, foodLocation) {
+        return snakeHead.x == foodLocation.x && snakeHead.y == foodLocation.y;
+    }
+
+    function newFoodPosition() {
+        return {
+            x: Math.floor(Math.random() * limits.maxX),
+            y: Math.floor(Math.random() * limits.maxY),
+        }
+    };
+
+    const RandomFood = useMemo(() => {
+        return <Food coords={{ x: food.x, y: food.y}} top={insets.top} />;
+    }, [food]);    
+   
+    return (
+        <PanGestureHandler onGestureEvent={handleGesture}>
+            <SafeAreaView style={StyleSheet.container}>
+                <Header
+                top={insets.top}
+                score={score}
+                paused={isGamePaused}
+                pause={() => setIsGamePaused((prev) => !prev)}
+                reload={() => setIsGameOver((prev) => !prev)}
+                />
+                <Board rows={ROWS} cols={COLS} top={insets.top} />
+                <Snake snake={snake} top={insets.top} />
+                { RandomFood }
+            </SafeAreaView>
+        </PanGestureHandler>
+        )
+    }
+
+    const styles = StyleSheet.create({
+        container: {
+            backgroundColor: colors.p6,
+            flex: 1,
+        },
+   
+    })
+   
+export default Game
+    
